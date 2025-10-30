@@ -51,7 +51,7 @@ Create `web/.env.local` with your Supabase connection string (include `?sslmode=
 
 ```bash
 # Example
-DATABASE_URL="postgres://USER:PASSWORD@HOST:PORT/DB?sslmode=require"
+GOOSE_DBSTRING="postgres://USER:PASSWORD@HOST:PORT/DB?sslmode=require"
 BETTER_AUTH_SECRET="replace-with-strong-secret"
 NEXT_PUBLIC_APP_NAME="AuthManager"
 ```
@@ -74,7 +74,7 @@ export default defineConfig({
   out: "./drizzle",
   schema: "./src/db/schema.ts",
   dialect: "postgresql",
-  dbCredentials: { url: process.env.DATABASE_URL! },
+  dbCredentials: { url: process.env.GOOSE_DBSTRING! },
 });
 ```
 
@@ -86,7 +86,7 @@ Add `src/env.ts` to validate required env vars at startup and import where neede
 import { z } from "zod";
 
 const schema = z.object({
-  DATABASE_URL: z.string().url(),
+  GOOSE_DBSTRING: z.string().url(),
   BETTER_AUTH_SECRET: z.string().min(16),
   NEXT_PUBLIC_APP_NAME: z.string().default("AuthManager"),
 });

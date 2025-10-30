@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { ROUTE_PATH,ROUTE_URL } from "../../routes";
+import { ROUTE_URL } from "@/constants";
 
 async function tryFetch(url: string) {
 	const res = await fetch(url, { method: "GET" }).catch(() => null);
