@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Input } from "./input";
-import { Button } from "./button";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
 import { Eye, EyeOff } from "lucide-react";
 
 export interface PasswordInputProps

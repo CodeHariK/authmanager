@@ -1,150 +1,126 @@
 "use client";
 
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { PasswordInput } from "@/components/ui/password-input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { authClient } from "@/lib/auth-client";
-import { toast } from "sonner";
+import Layout from "@/components/new/layout";
+import { Card } from "@/components/ui/card";
+import { useEffect, useState, Suspense } from "react";
+import { redirect, useSearchParams, useRouter } from "next/navigation";
+import { LoginForm } from "@/components/auth/login-form";
+import { SignupForm } from "@/components/auth/signup-form";
+import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
+import { VerifyEmailForm } from "@/components/auth/verify-email-form";
 
-const loginSchema = z.object({
-    email: z.email(),
-    password: z.string().min(6),
-});
+function AuthPageContent() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const [activeTab, setActiveTab] = useState("login");
+    const [verifyEmail, setVerifyEmail] = useState<string>("");
+    const [previousSession, setPreviousSession] = useState<any>(null);
+    const { data: session, isPending: loading } = authClient.useSession();
 
-const signupSchema = z.object({
-    name: z.string().min(3),
-    email: z.email(),
-    password: z.string().min(6),
-});
+    // Helper function to update tab and URL
+    const updateTab = (tab: string) => {
+        setActiveTab(tab);
+        const newUrl = tab === "login" ? "/auth/login" : `/auth/login?tab=${tab}`;
+        window.history.replaceState({}, "", newUrl);
+    };
 
-export default function AuthPage() {
-    const loginForm = useForm<z.infer<typeof loginSchema>>({
-        resolver: zodResolver(loginSchema),
-        defaultValues: { email: "", password: "" },
-    });
-
-    const signupForm = useForm<z.infer<typeof signupSchema>>({
-        resolver: zodResolver(signupSchema),
-        defaultValues: { name: "", email: "", password: "" },
-    });
-
-    async function onLogin(values: z.infer<typeof loginSchema>) {
-        await authClient.signIn.email(values);
-        window.location.href = "/";
-    }
-
-    async function onSignup(values: z.infer<typeof signupSchema>) {
-        try {
-            await authClient.signUp.email({ ...values, callbackURL: "/" });
-            toast.success("Account created");
-            window.location.href = "/";
-        } catch (err: any) {
-            toast.error(err?.message ?? "Sign up failed");
+    // Check for tab query param
+    useEffect(() => {
+        const tab = searchParams?.get("tab");
+        if (tab && ["login", "signup", "forgot-password", "verify-email"].includes(tab)) {
+            setActiveTab(tab);
         }
+    }, [searchParams]);
+
+    // Detect sign out and reload page
+    useEffect(() => {
+        if (previousSession && !session && !loading) {
+            // User was signed in but now signed out - reload the page
+            window.location.reload();
+        }
+        setPreviousSession(session);
+    }, [session, loading, previousSession]);
+
+    useEffect(() => {
+        if (!session && !loading && activeTab === "verify-email") {
+            // If no session and on verify-email tab, switch to signup
+            updateTab("signup");
+        }
+    }, [session, activeTab, loading]);
+
+    useEffect(() => {
+        if (session && !loading) {
+            // If logged in and email is verified, redirect to home
+            if (session.user.emailVerified) {
+                redirect("/");
+            } else if (!session.user.emailVerified && session.user.email) {
+                // If logged in but email not verified, show verify email tab
+                if (activeTab !== "verify-email") {
+                    updateTab("verify-email");
+                    setVerifyEmail(session.user.email);
+                }
+                // Allow user to stay on verify-email tab to verify
+            }
+        }
+    }, [session, activeTab, loading]);
+
+    function handleEmailNotVerified(email: string) {
+        updateTab("verify-email");
+        setVerifyEmail(email);
     }
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-[70vh]">
-            <Tabs defaultValue="login" className="w-full max-w-sm">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="login">Sign In</TabsTrigger>
-                    <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                </TabsList>
-                <TabsContent value="login">
-                    <Form {...loginForm}>
-                        <form
-                            onSubmit={loginForm.handleSubmit(onLogin)}
-                            className="space-y-4 mt-4"
-                        >
-                            <FormField
-                                control={loginForm.control}
-                                name="email"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Email</FormLabel>
-                                        <FormControl>
-                                            <Input type="email" placeholder="you@example.com" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={loginForm.control}
-                                name="password"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Password</FormLabel>
-                                        <FormControl>
-                                            <PasswordInput placeholder="Your password" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <Button type="submit" className="w-full" disabled={loginForm.formState.isSubmitting}>
-                                {loginForm.formState.isSubmitting ? "Signing in..." : "Sign In"}
-                            </Button>
-                        </form>
-                    </Form>
-                </TabsContent>
-                <TabsContent value="signup">
-                    <Form {...signupForm}>
-                        <form
-                            onSubmit={signupForm.handleSubmit(onSignup)}
-                            className="space-y-4 mt-4"
-                        >
-                            <FormField
-                                control={signupForm.control}
-                                name="name"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Name</FormLabel>
-                                        <FormControl>
-                                            <Input type="text" placeholder="Your name" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={signupForm.control}
-                                name="email"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Email</FormLabel>
-                                        <FormControl>
-                                            <Input type="email" placeholder="you@example.com" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={signupForm.control}
-                                name="password"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Password</FormLabel>
-                                        <FormControl>
-                                            <PasswordInput placeholder="Create a password" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <Button type="submit" className="w-full" disabled={signupForm.formState.isSubmitting}>
-                                {signupForm.formState.isSubmitting ? "Creating..." : "Create account"}
-                            </Button>
-                        </form>
-                    </Form>
-                </TabsContent>
-            </Tabs>
-        </div>
+        <Layout>
+            <Card className="flex flex-col items-center justify-center w-full max-w-sm">
+                <Tabs value={activeTab} onValueChange={updateTab} className="w-full px-4">
+                    {activeTab !== "forgot-password" && activeTab !== "verify-email" && (
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="login">Sign In</TabsTrigger>
+                            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                        </TabsList>
+                    )}
+                    <TabsContent value="login">
+                        <LoginForm 
+                            setActiveTab={updateTab}
+                            onEmailNotVerified={handleEmailNotVerified}
+                        />
+                    </TabsContent>
+
+                    <TabsContent value="signup">
+                        <SignupForm 
+                            setActiveTab={updateTab}
+                            onEmailNotVerified={handleEmailNotVerified}
+                        />
+                    </TabsContent>
+
+                    <TabsContent value="forgot-password">
+                        <ForgotPasswordForm setActiveTab={updateTab} />
+                    </TabsContent>
+
+                    <TabsContent value="verify-email">
+                        <VerifyEmailForm 
+                            setActiveTab={updateTab}
+                            initialEmail={verifyEmail}
+                        />
+                    </TabsContent>
+                </Tabs>
+            </Card>
+        </Layout>
+    );
+}
+
+export default function AuthPage() {
+    return (
+        <Suspense fallback={
+            <Layout>
+                <Card className="flex flex-col items-center justify-center w-full max-w-sm">
+                    <div className="w-full px-4 py-8 text-center">Loading...</div>
+                </Card>
+            </Layout>
+        }>
+            <AuthPageContent />
+        </Suspense>
     );
 }

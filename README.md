@@ -47,13 +47,30 @@ bunx shadcn@latest add button input form dialog table sonner
 
 ### 4) Environment variables
 
-Create `web/.env.local` with your Supabase connection string (include `?sslmode=require` if needed):
+Create `web/.env.local` with your configuration:
 
 ```bash
-# Example
-GOOSE_DBSTRING="postgres://USER:PASSWORD@HOST:PORT/DB?sslmode=require"
-BETTER_AUTH_SECRET="replace-with-strong-secret"
-NEXT_PUBLIC_APP_NAME="AuthManager"
+# Next.js Public URLs
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+NEXT_PUBLIC_APP_NAME=AuthManager
+
+# Database (Postgres)
+GOOSE_DBSTRING=postgres://USER:PASSWORD@HOST:PORT/DB?sslmode=require
+
+# Better Auth
+BETTER_AUTH_SECRET=replace-with-strong-secret-min-16-chars
+
+# Redis
+REDIS_USERNAME=default
+REDIS_PASSWORD=your-redis-password
+REDIS_HOST=your-redis-host
+REDIS_PORT=6379
+
+# OAuth Providers (optional)
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+TWITCH_CLIENT_ID=your-twitch-client-id
+TWITCH_CLIENT_SECRET=your-twitch-client-secret
 ```
 
 ### 5) Drizzle setup (Postgres/Supabase)
