@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { User as UserIcon, LogOut } from "lucide-react";
@@ -8,6 +9,7 @@ import { ConfirmationDialog } from "@/components/new/confirmation-dialog";
 import { toast } from "sonner";
 
 export function UserMenu() {
+    const router = useRouter();
     const { data: session } = authClient.useSession();
     const [isHovering, setIsHovering] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
@@ -23,6 +25,7 @@ export function UserMenu() {
             setIsOpen(false);
             setSignOutDialogOpen(false);
             toast.success("Signed out successfully");
+            router.refresh();
         } catch (err: any) {
             console.error("Failed to sign out:", err);
             toast.error(err?.message ?? "Failed to sign out");

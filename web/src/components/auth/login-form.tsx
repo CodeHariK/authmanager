@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/new/password-input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Field, FieldContent, FieldError, FieldLabel } from "@/components/ui/field";
 import { Separator } from "@/components/ui/separator";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
@@ -54,52 +54,45 @@ export function LoginForm({ setActiveTab, onEmailNotVerified }: LoginFormProps) 
 
     return (
         <>
-            <Form {...form}>
-                <form
-                    onSubmit={form.handleSubmit(onSubmit)}
-                    className="space-y-4 mt-4"
-                >
-                    <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Email</FormLabel>
-                                <FormControl>
-                                    <Input type="email" placeholder="you@example.com" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="password"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Password</FormLabel>
-                                <FormControl>
-                                    <PasswordInput placeholder="Your password" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                        {form.formState.isSubmitting ? "Signing in..." : "Sign In"}
-                    </Button>
-                    
-                    <div className="text-center text-sm">
-                        <button
-                            type="button"
-                            onClick={() => setActiveTab("forgot-password")}
-                            className="text-primary hover:underline"
-                        >
-                            Forgot Password?
-                        </button>
-                    </div>
-                </form>
-            </Form>
+            <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4 mt-4"
+            >
+                <Field data-invalid={!!form.formState.errors.email}>
+                    <FieldLabel>Email</FieldLabel>
+                    <FieldContent>
+                        <Input 
+                            type="email" 
+                            placeholder="you@example.com" 
+                            {...form.register("email")} 
+                        />
+                        <FieldError errors={form.formState.errors.email ? [form.formState.errors.email] : undefined} />
+                    </FieldContent>
+                </Field>
+                <Field data-invalid={!!form.formState.errors.password}>
+                    <FieldLabel>Password</FieldLabel>
+                    <FieldContent>
+                        <PasswordInput 
+                            placeholder="Your password" 
+                            {...form.register("password")} 
+                        />
+                        <FieldError errors={form.formState.errors.password ? [form.formState.errors.password] : undefined} />
+                    </FieldContent>
+                </Field>
+                <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                    {form.formState.isSubmitting ? "Signing in..." : "Sign In"}
+                </Button>
+                
+                <div className="text-center text-sm">
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab("forgot-password")}
+                        className="text-primary hover:underline"
+                    >
+                        Forgot Password?
+                    </button>
+                </div>
+            </form>
 
             <Separator className="my-4" />
 
