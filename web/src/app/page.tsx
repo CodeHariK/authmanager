@@ -1,39 +1,71 @@
-import { Suspense } from "react";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
-import { Spinner } from "@/components/ui/spinner";
-import Layout from "@/components/new/layout";
-import { HomeContent } from "@/components/auth/home-content";
+"use client"
 
-export default async function Home() {
-  const headersList = await headers();
-  const session = await auth.api.getSession({
-    headers: headersList,
-  });
+import { ActionButtonWithConfirm } from "@/components/new/action-button-with-confirm";
+import { Button } from "@/components/ui/button"
+import { authClient } from "@/lib/auth/auth-client";
+import Link from "next/link"
+import { useEffect, useState } from "react"
 
-  // Fetch user accounts to check if they have a password account
-  let hasPasswordAccount = false;
-  let accountsData: any = null;
-  if (session) {
-    try {
-      const accounts = await auth.api.listUserAccounts({
-        headers: headersList,
-      });
-      accountsData = accounts;
-      console.log("listUserAccounts response:", JSON.stringify(accounts, null, 2));
-      hasPasswordAccount = accounts?.some((account: any) => account.providerId === "credential") ?? false;
-    } catch (err) {
-      console.error("Failed to fetch user accounts:", err);
-    }
+export default function Home() {
+  const [hasAdminPermission, setHasAdminPermission] = useState(false)
+  const { data: session, isPending: loading } = authClient.useSession()
+
+  useEffect(() => {
+    authClient.admin
+      .hasPermission({ permission: { user: ["list"] } })
+      .then(({ data }) => {
+        setHasAdminPermission(data?.success ?? false)
+      })
+  }, [])
+
+  if (loading) {
+    return <div>Loading...</div>
   }
 
   return (
-    <Suspense fallback={
-      <Layout center={true}>
-        <Spinner className="size-10" />
-      </Layout>
-    }>
-      <HomeContent initialSession={session || null} hasPasswordAccount={hasPasswordAccount} accountsData={accountsData} />
-    </Suspense>
-  );
+    <div className="my-6 px-4 max-w-md mx-auto">
+      <div className="text-center space-y-6">
+        {session == null ? (
+          <>
+            <h1 className="text-3xl font-bold">Welcome to Our App</h1>
+            <Button asChild size="lg">
+              <Link href="/auth/login">Sign In / Sign Up</Link>
+            </Button>
+          </>
+        ) : (
+          <>
+            <h1 className="text-3xl font-bold">Welcome {session.user.name}!</h1>
+            <div className="flex gap-4 justify-center">
+              <Button asChild size="lg">
+                <Link href="/profile">Profile</Link>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <Link href="/organizations">Organizations</Link>
+              </Button>
+              {hasAdminPermission && (
+                <Button variant="outline" asChild size="lg">
+                  <Link href="/admin">Admin</Link>
+                </Button>
+              )}
+              <ActionButtonWithConfirm
+                size="lg"
+                variant="destructive"
+                action={async () => {
+                  await authClient.signOut();
+                  return { success: true, message: "Signed out successfully" };
+                }}
+                dialogTitle="Sign Out"
+                dialogDescription="Are you sure you want to sign out? You will need to sign in again to access your account."
+                confirmText="Sign Out"
+                successMessage="Signed out successfully"
+                errorMessage="Failed to sign out"
+              >
+                Sign Out
+              </ActionButtonWithConfirm>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
 }

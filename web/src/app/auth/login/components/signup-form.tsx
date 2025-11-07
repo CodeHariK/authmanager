@@ -8,13 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/new/password-input";
 import { Field, FieldContent, FieldError, FieldLabel } from "@/components/ui/field";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
 import { toast } from "sonner";
 
 const signupSchema = z.object({
     name: z.string().min(3),
     email: z.email(),
     password: z.string().min(6),
+    favoriteNumber: z.string().min(1, "Favorite number is required"),
 });
 
 interface SignupFormProps {
@@ -26,12 +27,15 @@ export function SignupForm({ setActiveTab, onEmailNotVerified }: SignupFormProps
     const router = useRouter();
     const form = useForm<z.infer<typeof signupSchema>>({
         resolver: zodResolver(signupSchema),
-        defaultValues: { name: "", email: "", password: "" },
+        defaultValues: { name: "", email: "", password: "", favoriteNumber: "" },
     });
 
     async function onSubmit(values: z.infer<typeof signupSchema>) {
         try {
-            const res: any = await authClient.signUp.email(values);
+            const res: any = await authClient.signUp.email({
+                ...values,
+                favoriteNumber: parseInt(values.favoriteNumber, 10),
+            });
             if (res?.error) {
                 toast.error(res.error?.message ?? "Sign up failed");
                 return;
@@ -87,6 +91,13 @@ export function SignupForm({ setActiveTab, onEmailNotVerified }: SignupFormProps
                         {...form.register("password")} 
                     />
                     <FieldError errors={form.formState.errors.password ? [form.formState.errors.password] : undefined} />
+                </FieldContent>
+            </Field>
+            <Field data-invalid={!!form.formState.errors.favoriteNumber}>
+                <FieldLabel>Favorite Number</FieldLabel>
+                <FieldContent>
+                    <Input type="number" placeholder="Your favorite number" {...form.register("favoriteNumber")} />
+                    <FieldError errors={form.formState.errors.favoriteNumber ? [form.formState.errors.favoriteNumber] : undefined} />
                 </FieldContent>
             </Field>
             <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>

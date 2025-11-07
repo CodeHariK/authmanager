@@ -1,13 +1,13 @@
 "use client";
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
 import Layout from "@/components/new/layout";
 import { Card } from "@/components/ui/card";
 import { useEffect, useState, Suspense } from "react";
 import { redirect, useSearchParams, useRouter } from "next/navigation";
-import { LoginForm } from "@/components/auth/login-form";
-import { SignupForm } from "@/components/auth/signup-form";
+import { LoginForm } from "./components/login-form";
+import { SignupForm } from "./components/signup-form";
 import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
 import { VerifyEmailForm } from "@/components/auth/verify-email-form";
 

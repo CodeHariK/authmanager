@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ const profileUpdateSchema = z.object({
     (val) => !val || z.string().url().safeParse(val).success,
     { message: "Invalid URL" }
   ).optional(),
+  favoriteNumber: z.number().int(),
 });
 
 interface ProfileUpdateTabProps {
@@ -30,6 +31,7 @@ export function ProfileUpdateTab({ session }: ProfileUpdateTabProps) {
     defaultValues: {
       name: session?.user?.name || "",
       image: session?.user?.image || "",
+      favoriteNumber: session?.user?.favoriteNumber || 0,
     },
   });
 
@@ -44,6 +46,10 @@ export function ProfileUpdateTab({ session }: ProfileUpdateTabProps) {
       }
       if (values.image !== undefined && values.image !== session?.user?.image) {
         updateData.image = values.image || null;
+      }
+
+      if (values.favoriteNumber && values.favoriteNumber !== session?.user?.favoriteNumber) { 
+        updateData.favoriteNumber = values.favoriteNumber;
       }
 
       if (Object.keys(updateData).length === 0) {
@@ -104,6 +110,17 @@ export function ProfileUpdateTab({ session }: ProfileUpdateTabProps) {
                 <p className="text-xs text-muted-foreground mt-1">
                   Enter a URL to your profile image. Leave empty to remove the image.
                 </p>
+              </FieldContent>
+            </Field>
+
+            <Field data-invalid={!!form.formState.errors.favoriteNumber}>
+              <FieldLabel>Favorite Number</FieldLabel>
+              <FieldContent>
+                <Input
+                  type="number"
+                  placeholder="Your favorite number"
+                  {...form.register("favoriteNumber")}
+                />
               </FieldContent>
             </Field>
 

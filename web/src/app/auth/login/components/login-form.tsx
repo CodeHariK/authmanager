@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/new/password-input";
 import { Field, FieldContent, FieldError, FieldLabel } from "@/components/ui/field";
 import { Separator } from "@/components/ui/separator";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
 import { toast } from "sonner";
-import { Cloud } from "lucide-react";
+import { PasskeyButton } from "./passkey-button";
+import { SocialAuthButtons } from "./social-auth-buttons"
 
 const loginSchema = z.object({
     email: z.email(),
@@ -96,12 +97,11 @@ export function LoginForm({ setActiveTab, onEmailNotVerified }: LoginFormProps) 
 
             <Separator className="my-4" />
 
-            <Button variant="outline" className="w-full" 
-                onClick={() => {
-                    authClient.signIn.social({ provider: "google", callbackURL: "/" })
-                }}>
-                <Cloud /> Sign In with Google
-            </Button>
+            <PasskeyButton />
+
+            <Separator className="my-4" />
+
+            <SocialAuthButtons />
         </>
     );
 }

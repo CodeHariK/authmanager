@@ -12,6 +12,10 @@ const schema = z.object({
     // OAuth Providers
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
+
+    // Email Providers
+    RESEND_API_KEY: z.string().optional(),
+    RESEND_FROM_EMAIL: z.string().optional(),
 });
 
 // Only parse on server side and only once at startup
@@ -41,6 +45,8 @@ if (typeof window === "undefined") {
         REDIS_PORT: 0,
         GOOGLE_CLIENT_ID: undefined,
         GOOGLE_CLIENT_SECRET: undefined,
+        RESEND_API_KEY: undefined,
+        RESEND_FROM_EMAIL: undefined,
     } as z.infer<typeof schema>;
 }
 

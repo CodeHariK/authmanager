@@ -1,14 +1,40 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ConfirmationDialog } from "@/components/new/confirmation-dialog";
-import { toast } from "sonner";
+import { ActionButtonWithConfirm } from "@/components/new/action-button-with-confirm";
+
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Session } from "better-auth"
+import { Monitor, Smartphone, Trash2 } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { UAParser } from "ua-parser-js"
+
+function getBrowserInformation(userAgent: string | undefined | null) {
+  if (!userAgent) return "Unknown Device";
+  const userAgentInfo = UAParser(userAgent);
+  if (userAgentInfo.browser.name == null && userAgentInfo.os.name == null) {
+    return "Unknown Device";
+  }
+  if (userAgentInfo.browser.name == null) return userAgentInfo.os.name || "Unknown Device";
+  if (userAgentInfo.os.name == null) return userAgentInfo.browser.name || "Unknown Device";
+  return `${userAgentInfo.browser.name}, ${userAgentInfo.os.name}`;
+}
+
+function formatDate(date: Date | string | undefined | null) {
+  if (!date) return "-";
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(date));
+}
 
 type SessionItem = {
+  id?: string;
   createdAt: Date | string;
   updatedAt: Date | string;
   expiresAt: Date | string;
@@ -26,10 +52,6 @@ export function SessionsTab({ session }: SessionsTabProps) {
   const [sessions, setSessions] = useState<SessionItem[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
-  const [revokingAll, setRevokingAll] = useState(false);
-  const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
-  const [revokeAllDialogOpen, setRevokeAllDialogOpen] = useState(false);
-  const [sessionToRevoke, setSessionToRevoke] = useState<SessionItem | null>(null);
 
   useEffect(() => {
     if (session) {
@@ -57,14 +79,25 @@ export function SessionsTab({ session }: SessionsTabProps) {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Your Sessions</h2>
           {sessions.length > 1 && session.user.emailVerified && (
-            <Button
+            <ActionButtonWithConfirm
               variant="outline"
               size="sm"
-              disabled={revokingAll}
-              onClick={() => setRevokeAllDialogOpen(true)}
+              action={async () => {
+                await authClient.revokeOtherSessions();
+                const currentSessionToken = session?.session?.token;
+                setSessions((prev) => 
+                  prev.filter((s) => s.token === currentSessionToken)
+                );
+                return { success: true, message: "All other sessions revoked successfully" };
+              }}
+              dialogTitle="Revoke All Other Sessions"
+              dialogDescription="Are you sure you want to revoke all other sessions? You will remain logged in on this device only."
+              confirmText="Revoke All"
+              successMessage="All other sessions revoked successfully"
+              errorMessage="Failed to revoke other sessions"
             >
-              {revokingAll ? "Revoking..." : "Revoke All Other Sessions"}
-            </Button>
+              Revoke All Other Sessions
+            </ActionButtonWithConfirm>
           )}
           {sessions.length > 1 && !session.user.emailVerified && (
             <Button
@@ -100,10 +133,10 @@ export function SessionsTab({ session }: SessionsTabProps) {
                   </TableRow>
                 ) : (
                   sessions.map((s) => {
-                    const userAgent = s.userAgent ?? "Unknown";
+                    const browserInfo = getBrowserInformation(s.userAgent);
                     const ipAddress = s.ipAddress ?? "-";
-                    const createdAt = s.createdAt ? new Date(s.createdAt).toLocaleString() : "-";
-                    const expiresAt = s.expiresAt ? new Date(s.expiresAt).toLocaleString() : "-";
+                    const createdAt = formatDate(s.createdAt);
+                    const expiresAt = formatDate(s.expiresAt);
                     const isHovered = hoveredRow === s.token;
                     const isCurrentSession = session?.session?.token === s.token;
                     return (
@@ -114,7 +147,7 @@ export function SessionsTab({ session }: SessionsTabProps) {
                         onMouseLeave={() => setHoveredRow(null)}
                       >
                         <TableCell className="max-w-[500px] whitespace-normal">
-                          <div className={isHovered ? "break-words whitespace-normal" : "line-clamp-2 break-words"}>{userAgent}</div>
+                          <div className={isHovered ? "break-words whitespace-normal" : "line-clamp-2 break-words"}>{browserInfo}</div>
                         </TableCell>
                         <TableCell className="max-w-[120px] whitespace-normal">
                           <div className={isHovered ? "break-words whitespace-normal" : "line-clamp-2 break-words"}>{ipAddress}</div>
@@ -127,16 +160,22 @@ export function SessionsTab({ session }: SessionsTabProps) {
                         </TableCell>
                         <TableCell className="max-w-[100px] whitespace-normal">
                           {!isCurrentSession && session.user.emailVerified && (
-                            <Button
+                            <ActionButtonWithConfirm
                               variant="destructive"
                               size="sm"
-                              onClick={() => {
-                                setSessionToRevoke(s);
-                                setRevokeDialogOpen(true);
+                              action={async () => {
+                                await authClient.revokeSession({ token: s.token });
+                                setSessions((prev) => prev.filter((ss) => ss.token !== s.token));
+                                return { success: true, message: "Session revoked successfully" };
                               }}
+                              dialogTitle="Revoke Session"
+                              dialogDescription="Are you sure you want to revoke this session? You will be logged out from this device."
+                              confirmText="Revoke"
+                              successMessage="Session revoked successfully"
+                              errorMessage="Failed to revoke session"
                             >
                               Revoke
-                            </Button>
+                            </ActionButtonWithConfirm>
                           )}
                           {!isCurrentSession && !session.user.emailVerified && (
                             <span className="text-xs text-muted-foreground">Verify email</span>
@@ -150,55 +189,8 @@ export function SessionsTab({ session }: SessionsTabProps) {
             </Table>
           </div>
         )}
+
       </div>
-
-      <ConfirmationDialog
-        open={revokeDialogOpen}
-        onOpenChange={setRevokeDialogOpen}
-        title="Revoke Session"
-        description="Are you sure you want to revoke this session? You will be logged out from this device."
-        confirmText="Revoke"
-        onConfirm={async () => {
-          if (!sessionToRevoke) return;
-          try {
-            await authClient.revokeSession({ token: sessionToRevoke.token });
-            setSessions((prev) => prev.filter((ss) => ss.token !== sessionToRevoke.token));
-            setRevokeDialogOpen(false);
-            setSessionToRevoke(null);
-            toast.success("Session revoked successfully");
-          } catch (err: any) {
-            console.error("Failed to revoke session:", err);
-            toast.error(err?.message ?? "Failed to revoke session");
-          }
-        }}
-      />
-
-      <ConfirmationDialog
-        open={revokeAllDialogOpen}
-        onOpenChange={setRevokeAllDialogOpen}
-        title="Revoke All Other Sessions"
-        description="Are you sure you want to revoke all other sessions? You will remain logged in on this device only."
-        confirmText="Revoke All"
-        loading={revokingAll}
-        loadingText="Revoking..."
-        onConfirm={async () => {
-          try {
-            setRevokingAll(true);
-            await authClient.revokeOtherSessions();
-            const currentSessionToken = session?.session?.token;
-            setSessions((prev) => 
-              prev.filter((s) => s.token === currentSessionToken)
-            );
-            setRevokeAllDialogOpen(false);
-            toast.success("All other sessions revoked successfully");
-          } catch (err: any) {
-            console.error("Failed to revoke other sessions:", err);
-            toast.error(err?.message ?? "Failed to revoke other sessions");
-          } finally {
-            setRevokingAll(false);
-          }
-        }}
-      />
     </>
   );
 }

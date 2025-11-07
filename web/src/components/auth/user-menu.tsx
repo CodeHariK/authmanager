@@ -2,35 +2,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { authClient } from "@/lib/auth-client";
-import { Button } from "@/components/ui/button";
+import { authClient } from "@/lib/auth/auth-client";
 import { User as UserIcon, LogOut } from "lucide-react";
-import { ConfirmationDialog } from "@/components/new/confirmation-dialog";
-import { toast } from "sonner";
+import { ActionButtonWithConfirm } from "@/components/new/action-button-with-confirm";
 
 export function UserMenu() {
     const router = useRouter();
     const { data: session } = authClient.useSession();
     const [isHovering, setIsHovering] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
-    const [signOutDialogOpen, setSignOutDialogOpen] = useState(false);
 
     if (!session?.user) {
         return null;
     }
-
-    const handleSignOut = async () => {
-        try {
-            await authClient.signOut();
-            setIsOpen(false);
-            setSignOutDialogOpen(false);
-            toast.success("Signed out successfully");
-            router.refresh();
-        } catch (err: any) {
-            console.error("Failed to sign out:", err);
-            toast.error(err?.message ?? "Failed to sign out");
-        }
-    };
 
     return (
         <div
@@ -67,29 +51,29 @@ export function UserMenu() {
                             {session.user.email || "No email"}
                         </p>
                     </div>
-                    <Button
+
+                    <ActionButtonWithConfirm
                         variant="destructive"
                         size="sm"
                         className="w-full"
-                        onClick={() => {
+                        action={async () => {
+                            await authClient.signOut();
                             setIsOpen(false);
-                            setSignOutDialogOpen(true);
+                            return { success: true, message: "Signed out successfully" };
                         }}
+                        dialogTitle="Sign Out"
+                        dialogDescription="Are you sure you want to sign out? You will need to sign in again to access your account."
+                        confirmText="Sign Out"
+                        successMessage="Signed out successfully"
+                        errorMessage="Failed to sign out"
+                        onSuccess={() => router.refresh()}
                     >
                         <LogOut className="h-4 w-4 mr-2" />
                         Sign Out
-                    </Button>
+                    </ActionButtonWithConfirm>
+
                 </div>
             )}
-
-            <ConfirmationDialog
-                open={signOutDialogOpen}
-                onOpenChange={setSignOutDialogOpen}
-                title="Sign Out"
-                description="Are you sure you want to sign out? You will need to sign in again to access your account."
-                confirmText="Sign Out"
-                onConfirm={handleSignOut}
-            />
         </div>
     );
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import Layout from "@/components/new/layout";
@@ -11,16 +11,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmailVerificationBanner } from "@/components/auth/email-verification-banner";
 import { SessionsTab } from "@/components/auth/sessions-tab";
 import { ProfileUpdateTab } from "@/components/auth/profile-update-tab";
-import { SecurityTab } from "@/components/auth/security-tab";
+import { SecurityTab, SecurityTab2 } from "@/components/auth/security-tab";
 import { toast } from "sonner";
 
-interface HomeContentProps {
+interface ProfileContentProps {
     initialSession: any;
     hasPasswordAccount?: boolean;
     accountsData?: any;
 }
 
-export function HomeContent({ initialSession, hasPasswordAccount = false, accountsData }: HomeContentProps) {
+export function ProfileContent({ initialSession, hasPasswordAccount = false, accountsData }: ProfileContentProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { data: session, isPending: loading } = authClient.useSession();
@@ -84,16 +84,17 @@ export function HomeContent({ initialSession, hasPasswordAccount = false, accoun
                             <TabsTrigger value="security">Security</TabsTrigger>
                         </TabsList>
 
-                        <TabsContent value="profile" className="space-y-6">
-                            <ProfileUpdateTab session={activeSession} />
-                        </TabsContent>
-
                         <TabsContent value="session" className="space-y-6">
                             <SessionsTab session={activeSession} />
                         </TabsContent>
 
+                        <TabsContent value="profile" className="space-y-6">
+                            <ProfileUpdateTab session={activeSession} />
+                        </TabsContent>
+
                         <TabsContent value="security" className="space-y-6">
                             <SecurityTab session={activeSession} hasPasswordAccount={hasPasswordAccount} accountsData={accountsData} />
+                            <SecurityTab2 email={activeSession.user.email} isTwoFactorEnabled={activeSession.user.twoFactorEnabled} />
                         </TabsContent>
                     </Tabs>
                 </div>
