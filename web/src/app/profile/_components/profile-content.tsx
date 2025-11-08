@@ -8,19 +8,21 @@ import { Spinner } from "@/components/ui/spinner";
 import Layout from "@/components/new/layout";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { EmailVerificationBanner } from "@/components/auth/email-verification-banner";
-import { SessionsTab } from "@/components/auth/sessions-tab";
-import { ProfileUpdateTab } from "@/components/auth/profile-update-tab";
-import { SecurityTab, SecurityTab2 } from "@/components/auth/security-tab";
+import { EmailVerificationBanner } from "./email-verification-banner";
+import { SessionsTab } from "./sessions-tab";
+import { ProfileUpdateTab } from "./profile-update-tab";
+import { SecurityTab } from "./security-tab-client";
+import { SecurityTab2Client } from "./security-tab-client-2";
 import { toast } from "sonner";
 
 interface ProfileContentProps {
     initialSession: any;
     hasPasswordAccount?: boolean;
     accountsData?: any;
+    passkeysData?: any;
 }
 
-export function ProfileContent({ initialSession, hasPasswordAccount = false, accountsData }: ProfileContentProps) {
+export function ProfileContent({ initialSession, hasPasswordAccount = false, accountsData, passkeysData }: ProfileContentProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { data: session, isPending: loading } = authClient.useSession();
@@ -94,7 +96,12 @@ export function ProfileContent({ initialSession, hasPasswordAccount = false, acc
 
                         <TabsContent value="security" className="space-y-6">
                             <SecurityTab session={activeSession} hasPasswordAccount={hasPasswordAccount} accountsData={accountsData} />
-                            <SecurityTab2 email={activeSession.user.email} isTwoFactorEnabled={activeSession.user.twoFactorEnabled} />
+                            <SecurityTab2Client 
+                                email={activeSession.user.email} 
+                                isTwoFactorEnabled={activeSession.user.twoFactorEnabled} 
+                                passkeys={passkeysData}
+                                accounts={accountsData}
+                            />
                         </TabsContent>
                     </Tabs>
                 </div>

@@ -6,10 +6,10 @@ import Layout from "@/components/new/layout";
 import { Card } from "@/components/ui/card";
 import { useEffect, useState, Suspense } from "react";
 import { redirect, useSearchParams, useRouter } from "next/navigation";
-import { LoginForm } from "./components/login-form";
-import { SignupForm } from "./components/signup-form";
-import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
-import { VerifyEmailForm } from "@/components/auth/verify-email-form";
+import { LoginForm } from "./_components/login-form";
+import { SignupForm } from "./_components/signup-form";
+import { ForgotPasswordForm } from "./_components/forgot-password-form";
+import { VerifyEmailForm } from "./_components/verify-email-form";
 
 function AuthPageContent() {
     const router = useRouter();

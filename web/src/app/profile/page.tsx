@@ -3,8 +3,9 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth/auth";
 import { Spinner } from "@/components/ui/spinner";
 import Layout from "@/components/new/layout";
-import { ProfileContent } from "@/components/auth/profile-content";
 import { Card, CardContent } from "@/components/ui/card";
+
+import { ProfileContent } from "./_components/profile-content";
 
 export default async function ProfilePage() {
   const headersList = await headers();
@@ -15,12 +16,19 @@ export default async function ProfilePage() {
   // Fetch user accounts to check if they have a password account
   let hasPasswordAccount = false;
   let accountsData: any = null;
+  let passkeysData: any = null;
   if (session) {
     try {
-      const accounts = await auth.api.listUserAccounts({
-        headers: headersList,
-      });
+      const [accounts, passkeys] = await Promise.all([
+        auth.api.listUserAccounts({
+          headers: headersList,
+        }),
+        auth.api.listPasskeys({
+          headers: headersList,
+        }),
+      ]);
       accountsData = accounts;
+      passkeysData = passkeys;
       console.log("listUserAccounts response:", JSON.stringify(accounts, null, 2));
       hasPasswordAccount = accounts?.some((account: any) => account.providerId === "credential") ?? false;
     } catch (err) {
@@ -34,7 +42,7 @@ export default async function ProfilePage() {
         <Spinner className="size-10" />
       </Layout>
     }>
-      <ProfileContent initialSession={session || null} hasPasswordAccount={hasPasswordAccount} accountsData={accountsData} />
+      <ProfileContent initialSession={session || null} hasPasswordAccount={hasPasswordAccount} accountsData={accountsData} passkeysData={passkeysData} />
     </Suspense>
   );
 }

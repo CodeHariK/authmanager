@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Field, FieldContent, FieldLabel, FieldError } from "@/components/ui/field";
-import { ProfileCard } from "@/components/auth/profile-card";
+import { ProfileCard } from "./profile-card";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
